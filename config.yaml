@@ -1,0 +1,49 @@
+# Web Search Load Balance Configuration
+#
+# This file configures the MCP server with multiple providers and API keys.
+# The order of providers in this list determines their priority (first = highest).
+
+server:
+  name: "websearch_load_balance"
+  version: "0.1.0"
+  log_level: "info"
+
+# Strategy for API key selection within a provider
+key_strategy:
+  type: "round_robin"  # or "random"
+
+# Strategy for provider selection
+provider_strategy:
+  type: "round_robin"  # or "random"
+  fallback: true        # if primary fails, try next provider
+
+# Provider configurations
+# IMPORTANT: Replace the api_keys with your actual API keys
+providers:
+  # Tavily - excellent for general web search and content extraction
+  - name: "tavily"
+    enabled: true
+    base_url: "https://api.tavily.com"
+    api_keys:
+      - "tvly-your-tavily-api-key-here"
+    settings:
+      timeout_seconds: 30
+      max_results: 10
+
+  # MiniMax (Coding Plan) - good for programming-related searches
+  - name: "minimax"
+    enabled: true
+    base_url: "https://api.minimaxi.com"
+    api_keys:
+      - "your-minimax-api-key-here"
+    settings:
+      timeout_seconds: 30
+
+  # ZhiPu (智普) - Chinese search provider
+  - name: "zhipu"
+    enabled: true
+    base_url: "https://open.bigmodel.cn"
+    api_keys:
+      - "your-zhipu-api-key-here"
+    settings:
+      timeout_seconds: 30

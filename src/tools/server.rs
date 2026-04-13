@@ -1,0 +1,128 @@
+//! MCP server implementation for web search tools.
+
+use crate::config::Config;
+use crate::error::WebSearchError;
+use crate::load_balancer::ProviderLoadBalancer;
+use rmcp::handler::server::router::tool::ToolRouter;
+use rmcp::model::{ServerCapabilities, ServerInfo};
+use rmcp::schemars;
+use rmcp::{tool, tool_handler, tool_router, ErrorData as McpError, ServerHandler};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+/// Input schema for web_search tool.
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SearchParams {
+    /// The search query string. Use 3-5 keywords for best results.
+    pub query: String,
+
+    /// Maximum number of results to return (default: 10).
+    #[serde(default = "default_max_results")]
+    pub max_results: u32,
+}
+
+fn default_max_results() -> u32 {
+    10
+}
+
+/// Input schema for web_fetch tool.
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct FetchParams {
+    /// The URL to fetch content from.
+    pub url: String,
+}
+
+/// MCP server for web search load balancing.
+pub struct WebSearchMcpServer {
+    tool_router: ToolRouter<Self>,
+    load_balancer: ProviderLoadBalancer,
+    server_info: rmcp::model::Implementation,
+}
+
+impl WebSearchMcpServer {
+    /// Create a new MCP server from configuration.
+    pub fn new(config: &Config) -> Result<Self, WebSearchError> {
+        let load_balancer = ProviderLoadBalancer::from_config(config)?;
+        let server_info = rmcp::model::Implementation::from_build_env();
+        Ok(Self {
+            tool_router: Self::tool_router(),
+            load_balancer,
+            server_info,
+        })
+    }
+}
+
+#[tool_router]
+impl WebSearchMcpServer {
+    /// Web search tool - searches using configured providers with load balancing.
+    #[tool(
+        description = "Search the web for information. Uses multiple providers (Tavily, MiniMax, ZhiPu) \
+            with load balancing across API keys for reliability and rate limit handling."
+    )]
+    async fn web_search(
+        &self,
+        params: SearchParams,
+    ) -> Result<String, McpError> {
+        match self.load_balancer.search(&params.query, params.max_results).await {
+            Ok(response) => {
+                Ok(serde_json::to_string_pretty(&response)
+                    .unwrap_or_else(|_| format!("{:?}", response)))
+            }
+            Err(e) => {
+                Ok(format!("Search failed: {}", e))
+            }
+        }
+    }
+
+    /// Web fetch tool - fetches and extracts content from a URL.
+    #[tool(
+        description = "Fetch and extract content from a URL. Returns markdown-formatted content. \
+            Uses Tavily or ZhiPu provider (MiniMax does not support fetch)."
+    )]
+    async fn web_fetch(
+        &self,
+        params: FetchParams,
+    ) -> Result<String, McpError> {
+        match self.load_balancer.fetch(&params.url).await {
+            Ok(response) => {
+                Ok(serde_json::to_string_pretty(&response)
+                    .unwrap_or_else(|_| format!("{:?}", response)))
+            }
+            Err(e) => {
+                Ok(format!("Fetch failed: {}", e))
+            }
+        }
+    }
+}
+
+impl Default for WebSearchMcpServer {
+    fn default() -> Self {
+        // For default, we need a config - this is a workaround
+        // In practice, always use new() which takes config
+        Self {
+            tool_router: Self::tool_router(),
+            load_balancer: ProviderLoadBalancer::from_config(&Config::default())
+                .expect("default config should work"),
+            server_info: rmcp::model::Implementation::from_build_env(),
+        }
+    }
+}
+
+#[tool_handler]
+impl ServerHandler for WebSearchMcpServer {
+    fn get_info(&self) -> ServerInfo {
+        ServerInfo {
+            protocol_version: rmcp::model::ProtocolVersion::default(),
+            capabilities: ServerCapabilities::builder()
+                .enable_tools()
+                .build(),
+            server_info: self.server_info.clone(),
+            instructions: Some(
+                "Web search load balancing MCP server. \
+                Provides web_search and web_fetch tools with automatic \
+                load balancing across multiple providers and API keys."
+                    .into(),
+            ),
+        }
+    }
+}
