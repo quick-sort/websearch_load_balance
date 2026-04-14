@@ -27,7 +27,7 @@ RUN adduser -D -u 1000 appuser
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/target/release/websearch_load_balance /usr/local/bin/
+COPY --from=builder /app/target/release/one_search /usr/local/bin/
 
 # Copy default config template
 COPY config.yaml /app/config.yaml
@@ -42,4 +42,4 @@ USER appuser
 ENV CONFIG_PATH=/app/config.yaml
 
 # Use stdin/stdout for MCP communication
-ENTRYPOINT ["websearch_load_balance"]
+ENTRYPOINT ["one_search"]

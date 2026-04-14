@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: websearch_load_balance:latest
-    container_name: websearch-mcp
+    image: one_search:latest
+    container_name: one-search-mcp
     restart: unless-stopped
     stdin_open: true
     tty: true

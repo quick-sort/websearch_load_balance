@@ -180,7 +180,7 @@ impl Default for ProviderSettings {
 
 // Default value functions.
 fn default_name() -> String {
-    "websearch_load_balance".to_string()
+    "one_search".to_string()
 }
 
 fn default_version() -> String {

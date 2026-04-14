@@ -74,16 +74,16 @@ jobs:
       - name: Build release
         run: |
           cargo build --release --locked --no-default-features
-          strip target/release/websearch_load_balance
+          strip target/release/one_search
 
       - name: Create checksums
         run: |
-          sha256sum target/release/websearch_load_balance > checksums.txt
+          sha256sum target/release/one_search > checksums.txt
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            target/release/websearch_load_balance
+            target/release/one_search
             checksums.txt
           generate_release_notes: true

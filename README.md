@@ -1,7 +1,7 @@
-# Web Search Load Balance MCP Server
+# One Search MCP Server
 
-[![CI](https://github.com/quick-sort/websearch_load_balance/actions/workflows/ci.yml/badge.svg)](https://github.com/quick-sort/websearch_load_balance/actions/workflows/ci.yml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/quick-sort/websearch_load_balance)](https://github.com/quick-sort/websearch_load_balance/pkgs/container/websearch_load_balance)
+[![CI](https://github.com/quick-sort/one_search/actions/workflows/ci.yml/badge.svg)](https://github.com/quick-sort/one_search/actions/workflows/ci.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/quick-sort/one_search)](https://github.com/quick-sort/one_search/pkgs/container/one_search)
 
 A Rust-based MCP (Model Context Protocol) server that provides `web_search` and `web_fetch` tools with load balancing across multiple providers and API keys.
 
@@ -42,8 +42,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ### 2. Build
 
 ```bash
-git clone https://github.com/your-repo/websearch_load_balance.git
-cd websearch_load_balance
+git clone https://github.com/quick-sort/one_search.git
+cd one_search
 cargo build --release
 ```
 
@@ -82,7 +82,7 @@ Add to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "websearch": {
-      "command": "/path/to/target/release/websearch_load_balance",
+      "command": "/path/to/target/release/one_search",
       "args": []
     }
   }
@@ -179,8 +179,8 @@ cargo test -- --ignored  # integration tests (requires API keys)
 ## Docker
 
 ```bash
-docker build -t websearch_load_balance .
-docker run -it --rm -v $(pwd)/config.yaml:/app/config.yaml:ro websearch_load_balance
+docker build -t one_search .
+docker run -it --rm -v $(pwd)/config.yaml:/app/config.yaml:ro one_search
 ```
 
 ### Docker Compose

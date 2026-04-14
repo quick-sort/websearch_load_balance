@@ -1,5 +1,5 @@
 [package]
-name = "websearch_load_balance"
+name = "one_search"
 version = "0.1.0"
 edition = "2021"
 description = "MCP server for web search load balancing across multiple providers"

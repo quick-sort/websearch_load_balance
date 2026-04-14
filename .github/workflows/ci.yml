@@ -61,12 +61,22 @@ jobs:
           shared-key: websearch
 
       - name: Set environment variables from secrets (array format)
+        env:
+          TAVILY_API_KEYS: ${{ vars.TAVILY_API_KEYS }}
+          GLM_API_KEYS: ${{ vars.GLM_API_KEYS }}
+          GLM_CODING_API_KEYS: ${{ vars.GLM_CODING_API_KEYS }}
+          MINIMAX_API_KEYS: ${{ vars.MINIMAX_API_KEYS }}
+          BOCHA_API_KEYS: ${{ vars.BOCHA_API_KEYS }}
+          SERPAPI_API_KEYS: ${{ vars.SERPAPI_API_KEYS }}
+          SERPER_API_KEYS: ${{ vars.SERPER_API_KEYS }}
+          FIRECRAWL_API_KEYS: ${{ vars.FIRECRAWL_API_KEYS }}
+          ANYCRAWL_API_KEYS: ${{ vars.ANYCRAWL_API_KEYS }}
         run: |
           # Parse JSON array and extract first key
           parse_key() {
             local var_name="$1"
             local secrets_var="${var_name}S"
-            local value="${{ vars.${secrets_var} }}"
+            local value="${!secrets_var}"
             if [ -n "$value" ] && [ "$value" != "[]" ]; then
               # Extract first element from JSON array: ["key1","key2"] -> "key1"
               key=$(echo "$value" | python3 -c "import sys,json; keys=json.load(sys.stdin); print(keys[0] if keys else '')" 2>/dev/null)
@@ -118,5 +128,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: websearch_binary
-          path: target/release/websearch_load_balance
+          path: target/release/one_search
           retention-days: 7

@@ -4,7 +4,7 @@
 # The order of providers in this list determines their priority (first = highest).
 
 server:
-  name: "websearch_load_balance"
+  name: "one_search"
   version: "0.1.0"
   log_level: "info"
 

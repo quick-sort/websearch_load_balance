@@ -9,9 +9,9 @@ use std::path::PathBuf;
 use anyhow::Context;
 use rmcp::transport::async_rw::AsyncRwTransport;
 use tracing_subscriber::EnvFilter;
-use websearch_load_balance::config::Config;
-use websearch_load_balance::tools::WebSearchMcpServer;
-use websearch_load_balance::WebSearchError;
+use one_search::config::Config;
+use one_search::tools::WebSearchMcpServer;
+use one_search::WebSearchError;
 
 /// Default config file path: ./config.yaml
 fn default_config_path() -> PathBuf {
