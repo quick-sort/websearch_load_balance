@@ -7,7 +7,7 @@ authors = ["WebSearch Load Balance"]
 license = "MIT"
 
 [dependencies]
-rmcp = { version = "0.8", features = ["server", "macros", "schemars", "transport-io"] }
+rmcp = { version = "1.4", features = ["server", "macros", "schemars", "transport-io", "transport-async-rw"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -17,7 +17,7 @@ schemars = { version = "0.8", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2.0"
-anyhow = "1.0"
+anyhow = "1"
 async-trait = "0.1"
 
 [profile.release]

@@ -27,6 +27,9 @@ pub struct SearchResult {
     /// Publication date (if available).
     #[serde(default, rename = "date")]
     pub date: Option<String>,
+    /// Favicon URL of the source website (if available).
+    #[serde(default)]
+    pub favicon: Option<String>,
 }
 
 /// Related search query.

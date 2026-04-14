@@ -2,10 +2,12 @@
 //!
 //! An MCP server that provides web_search and web_fetch tools
 //! with load balancing across multiple providers and API keys.
+//! Supports stdio transport (HTTP can be added later).
 
 use std::path::PathBuf;
 
 use anyhow::Context;
+use rmcp::transport::async_rw::AsyncRwTransport;
 use tracing_subscriber::EnvFilter;
 use websearch_load_balance::config::Config;
 use websearch_load_balance::tools::WebSearchMcpServer;
@@ -79,20 +81,19 @@ async fn main() -> anyhow::Result<()> {
     let provider_count = config.enabled_providers().len();
     tracing::info!("Loaded {} provider(s)", provider_count);
 
+    tracing::info!("MCP server initialized, waiting for connections via stdio...");
+
     // Create MCP server
     let server = WebSearchMcpServer::new(&config)
         .context("Failed to create MCP server")?;
 
-    tracing::info!("MCP server initialized, waiting for connections...");
-
     // Serve via stdio transport
-    server
-        .serve(rmcp::transport::stdio())
+    let stdin = tokio::io::stdin();
+    let stdout = tokio::io::stdout();
+    let transport = AsyncRwTransport::new_server(stdin, stdout);
+    rmcp::service::serve_server(server, transport)
         .await
-        .context("Failed to serve MCP")?
-        .waiting()
-        .await
-        .context("MCP server error")?;
+        .context("Failed to serve MCP")?;
 
     Ok(())
 }

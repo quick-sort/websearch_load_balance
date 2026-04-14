@@ -46,6 +46,9 @@ pub struct ServerConfig {
     pub version: String,
     #[serde(default = "default_log_level")]
     pub log_level: String,
+    /// HTTP server configuration
+    #[serde(default)]
+    pub http: Option<HttpConfig>,
 }
 
 impl Default for ServerConfig {
@@ -54,6 +57,39 @@ impl Default for ServerConfig {
             name: default_name(),
             version: default_version(),
             log_level: default_log_level(),
+            http: None,
+        }
+    }
+}
+
+/// HTTP server configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HttpConfig {
+    /// Enable HTTP server
+    #[serde(default)]
+    pub enabled: bool,
+    /// Listen address
+    #[serde(default = "default_host")]
+    pub host: String,
+    /// Listen port
+    #[serde(default = "default_port")]
+    pub port: u16,
+    /// API key for authentication
+    #[serde(default)]
+    pub api_key: Option<String>,
+    /// Path for MCP endpoint
+    #[serde(default)]
+    pub mcp_path: Option<String>,
+}
+
+impl Default for HttpConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            host: default_host(),
+            port: default_port(),
+            api_key: None,
+            mcp_path: Some("/mcp".to_string()),
         }
     }
 }
@@ -99,7 +135,6 @@ pub struct ProviderConfig {
 }
 
 impl ProviderConfig {
-    /// Validate the provider configuration.
     pub fn validate(&self) -> Result<(), ConfigError> {
         if self.name.is_empty() {
             return Err(ConfigError::ValidationError(
@@ -108,7 +143,7 @@ impl ProviderConfig {
         }
         if self.api_keys.is_empty() {
             return Err(ConfigError::ValidationError(format!(
-                "Provider '{}' has no API keys configured",
+                "Provider {} has no API keys configured",
                 self.name
             )));
         }
@@ -123,6 +158,14 @@ pub struct ProviderSettings {
     pub timeout_seconds: u64,
     #[serde(default = "default_max_results")]
     pub max_results: u32,
+    #[serde(default)]
+    pub api_variant: Option<String>,
+}
+
+impl ProviderSettings {
+    pub fn variant(&self) -> &str {
+        self.api_variant.as_deref().unwrap_or("standard")
+    }
 }
 
 impl Default for ProviderSettings {
@@ -130,6 +173,7 @@ impl Default for ProviderSettings {
         Self {
             timeout_seconds: default_timeout(),
             max_results: default_max_results(),
+            api_variant: None,
         }
     }
 }
@@ -145,6 +189,14 @@ fn default_version() -> String {
 
 fn default_log_level() -> String {
     "info".to_string()
+}
+
+fn default_host() -> String {
+    "0.0.0.0".to_string()
+}
+
+fn default_port() -> u16 {
+    8080
 }
 
 fn default_enabled() -> bool {
@@ -164,13 +216,11 @@ fn default_max_results() -> u32 {
 }
 
 impl Config {
-    /// Load configuration from a YAML file.
     pub fn load(path: impl Into<PathBuf>) -> Result<Self, ConfigError> {
         let path = path.into();
         let content = std::fs::read_to_string(&path)?;
         let config: Config = serde_yaml::from_str(&content)?;
 
-        // Validate all providers.
         for provider in &config.providers {
             provider.validate()?;
         }
@@ -178,12 +228,10 @@ impl Config {
         Ok(config)
     }
 
-    /// Get enabled providers.
     pub fn enabled_providers(&self) -> Vec<&ProviderConfig> {
         self.providers.iter().filter(|p| p.enabled).collect()
     }
 
-    /// Get all provider names.
     pub fn provider_names(&self) -> Vec<&str> {
         self.providers.iter().map(|p| p.name.as_str()).collect()
     }

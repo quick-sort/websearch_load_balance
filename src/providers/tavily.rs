@@ -22,6 +22,8 @@ struct TavilyResult {
     content: String,
     #[serde(default)]
     published_date: Option<String>,
+    #[serde(default)]
+    favicon: Option<String>,
 }
 
 /// Tavily related query.
@@ -43,9 +45,8 @@ struct TavilyExtractResponse {
 #[derive(Debug, Deserialize)]
 struct TavilyExtractResult {
     url: String,
-    content: String,
-    #[serde(default)]
-    raw_content: Option<String>,
+    #[serde(alias = "content")]  // fallback if raw_content not present
+    raw_content: String,
     #[serde(default)]
     images: Vec<String>,
 }
@@ -101,6 +102,7 @@ impl WebSearchProvider for TavilyProvider {
                 "query": query,
                 "max_results": max_results,
                 "include_answers": true,
+                "include_favicon": true,
             }))
             .send()
             .await?
@@ -113,6 +115,7 @@ impl WebSearchProvider for TavilyProvider {
                 link: r.url,
                 snippet: r.content,
                 date: r.published_date,
+                favicon: r.favicon,
             }).collect(),
             related_searches: response.related_queries.into_iter()
                 .map(|rq| RelatedSearch { query: rq.query })
@@ -140,7 +143,7 @@ impl WebSearchProvider for TavilyProvider {
         for result in response.results {
             if result.url == url {
                 return Ok(FetchResponse {
-                    content: result.content,
+                    content: result.raw_content,
                     url: url.to_string(),
                     title: None,
                 });
@@ -178,5 +181,56 @@ mod tests {
             "tvly-abc123".to_string(),
         );
         assert_eq!(provider.auth_header(), "Bearer tvly-abc123");
+    }
+
+    #[tokio::test]
+    #[ignore] // 需要 TAVILY_API_KEY 环境变量
+    async fn test_search_integration() {
+        let api_key = std::env::var("TAVILY_API_KEY")
+            .unwrap_or_default();
+        if api_key.is_empty() {
+            eprintln!("跳过: TAVILY_API_KEY 未设置");
+            return;
+        }
+
+        let provider = TavilyProvider::new(
+            "https://api.tavily.com".to_string(),
+            api_key,
+        );
+
+        let result = provider.search("Rust programming language", 5).await;
+        assert!(result.is_ok(), "搜索失败: {:?}", result);
+
+        let response = result.unwrap();
+        assert!(!response.organic.is_empty(), "无搜索结果");
+        assert_eq!(response.organic.len(), 5);
+
+        // 验证返回结构
+        let first = &response.organic[0];
+        assert!(!first.title.is_empty());
+        assert!(!first.link.is_empty());
+        assert!(!first.snippet.is_empty());
+    }
+
+    #[tokio::test]
+    #[ignore] // 需要 TAVILY_API_KEY 环境变量
+    async fn test_fetch_integration() {
+        let api_key = std::env::var("TAVILY_API_KEY").unwrap_or_default();
+        if api_key.is_empty() {
+            eprintln!("跳过: TAVILY_API_KEY 未设置");
+            return;
+        }
+
+        let provider = TavilyProvider::new(
+            "https://api.tavily.com".to_string(),
+            api_key,
+        );
+
+        let result = provider.fetch("https://www.rust-lang.org/").await;
+        assert!(result.is_ok(), "获取失败: {:?}", result);
+
+        let response = result.unwrap();
+        assert!(!response.content.is_empty(), "无内容");
+        assert!(response.content.contains("Rust"));
     }
 }

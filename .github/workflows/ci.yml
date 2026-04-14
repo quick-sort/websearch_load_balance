@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  RUST_VERSION: "1.85"
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: ${{ env.RUST_VERSION }}
+          components: rustfmt, clippy
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: websearch
+
+      - name: Check format
+        run: cargo fmt --check --all
+
+      - name: Run clippy
+        run: cargo clippy --all -- -D warnings
+
+      - name: Build
+        run: cargo build --all --verbose
+
+      - name: Run unit tests
+        run: cargo test --all --verbose
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    # Only run if API keys are provided in secrets
+    if: vars.TAVILY_API_KEY != '' || vars.GLM_API_KEY != '' || vars.MINIMAX_API_KEY != '' || vars.GLM_CODING_API_KEY != '' || vars.BOCHA_API_KEY != ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: ${{ env.RUST_VERSION }}
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: websearch
+
+      - name: Set environment variables from secrets (single keys)
+        run: |
+          if [ -n "${{ vars.TAVILY_API_KEY }}" ]; then
+            echo "TAVILY_API_KEY=${{ vars.TAVILY_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.GLM_API_KEY }}" ]; then
+            echo "GLM_API_KEY=${{ vars.GLM_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.GLM_CODING_API_KEY }}" ]; then
+            echo "GLM_CODING_API_KEY=${{ vars.GLM_CODING_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.MINIMAX_API_KEY }}" ]; then
+            echo "MINIMAX_API_KEY=${{ vars.MINIMAX_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.BOCHA_API_KEY }}" ]; then
+            echo "BOCHA_API_KEY=${{ vars.BOCHA_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.SERPAPI_API_KEY }}" ]; then
+            echo "SERPAPI_API_KEY=${{ vars.SERPAPI_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.SERPER_API_KEY }}" ]; then
+            echo "SERPER_API_KEY=${{ vars.SERPER_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.FIRECRAWL_API_KEY }}" ]; then
+            echo "FIRECRAWL_API_KEY=${{ vars.FIRECRAWL_API_KEY }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.ANYCRAWL_API_KEY }}" ]; then
+            echo "ANYCRAWL_API_KEY=${{ vars.ANYCRAWL_API_KEY }}" >> $GITHUB_ENV
+          fi
+
+      - name: Build
+        run: cargo build --all
+
+      - name: Run integration tests
+        run: cargo test --all --ignored
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: ${{ env.RUST_VERSION }}
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: websearch
+
+      - name: Build release
+        run: cargo build --release --locked --no-default-features
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: websearch_binary
+          path: target/release/websearch_load_balance
+          retention-days: 7

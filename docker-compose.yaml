@@ -1,0 +1,15 @@
+services:
+  websearch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: websearch_load_balance:latest
+    container_name: websearch-mcp
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      - RUST_LOG=info
+      - CONFIG_PATH=/app/config.yaml

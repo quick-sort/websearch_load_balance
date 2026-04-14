@@ -125,6 +125,7 @@ impl WebSearchProvider for MiniMaxProvider {
                 link: r.link,
                 snippet: r.snippet,
                 date: r.date,
+                favicon: None, // MiniMax doesn't provide favicon
             }).collect(),
             related_searches: response.related_searches.into_iter()
                 .map(|rs| RelatedSearch { query: rs.query })
@@ -160,5 +161,31 @@ mod tests {
             "mmx-abc123".to_string(),
         );
         assert_eq!(provider.auth_header(), "Bearer mmx-abc123");
+    }
+
+    #[tokio::test]
+    #[ignore] // 需要 MINIMAX_API_KEY 环境变量
+    async fn test_search_integration() {
+        let api_key = std::env::var("MINIMAX_API_KEY").unwrap_or_default();
+        if api_key.is_empty() {
+            eprintln!("跳过: MINIMAX_API_KEY 未设置");
+            return;
+        }
+
+        let provider = MiniMaxProvider::new(
+            "https://api.minimaxi.com".to_string(),
+            api_key,
+        );
+
+        let result = provider.search("Rust programming", 5).await;
+        assert!(result.is_ok(), "搜索失败: {:?}", result);
+
+        let response = result.unwrap();
+        assert!(!response.organic.is_empty(), "无搜索结果");
+
+        // 验证返回结构
+        let first = &response.organic[0];
+        assert!(!first.title.is_empty());
+        assert!(!first.link.is_empty());
     }
 }

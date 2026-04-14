@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Documentation
+docs/
+README*.md
+LICENSE
+
+# Providers directory (separate project)
+providers/
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yaml
+
+# CI/CD
+.github/
+
+# Local config (may contain secrets)
+# Note: config.yaml is needed for Docker build, do NOT ignore it
+
+# Claude
+.claude/

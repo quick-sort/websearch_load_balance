@@ -23,27 +23,93 @@ providers:
   # Tavily - excellent for general web search and content extraction
   - name: "tavily"
     enabled: true
-    base_url: "https://api.tavily.com"
+    # base_url: "https://api.tavily.com"  # 默认值，可省略
     api_keys:
       - "tvly-your-tavily-api-key-here"
     settings:
       timeout_seconds: 30
       max_results: 10
 
-  # MiniMax (Coding Plan) - good for programming-related searches
-  - name: "minimax"
+  # MiniMax (国内版) - good for programming-related searches
+  - name: "minimaxi"
     enabled: true
-    base_url: "https://api.minimaxi.com"
+    # base_url: "https://api.minimaxi.com"  # 默认值，可省略
     api_keys:
       - "your-minimax-api-key-here"
     settings:
       timeout_seconds: 30
 
+  # MiniMax (国际版) - 使用 api.minimaxi.io 端点
+  # - name: "minimax_io"
+  #   enabled: false
+  #   # base_url: "https://api.minimaxi.io"  # 默认值，可省略
+  #   api_keys:
+  #     - "your-minimax-global-api-key-here"
+  #   settings:
+  #     timeout_seconds: 30
+
   # ZhiPu (智普) - Chinese search provider
+  # api_variant: "standard" (通用端点) 或 "coding" (Coding 套餐端点)
   - name: "zhipu"
     enabled: true
-    base_url: "https://open.bigmodel.cn"
+    # base_url: "https://open.bigmodel.cn"  # 默认值，可省略
     api_keys:
       - "your-zhipu-api-key-here"
     settings:
       timeout_seconds: 30
+      api_variant: "standard"  # "standard" 或 "coding"
+
+  # ZhiPu Coding 套餐 - 专属 Coding 端点
+  - name: "zhipu_coding"
+    enabled: false
+    # base_url: "https://open.bigmodel.cn"  # 默认值，可省略
+    api_keys:
+      - "your-zhipu-coding-api-key-here"
+    settings:
+      timeout_seconds: 30
+      api_variant: "coding"  # 使用 /api/coding/paas/v4/ 端点
+
+  # Bocha (博查) - 中文搜索，支持 summary
+  # - name: "bocha"
+  #   enabled: false
+  #   # base_url: "https://api.bocha.cn"  # 默认值，可省略
+  #   api_keys:
+  #     - "your-bocha-api-key-here"
+  #   settings:
+  #     timeout_seconds: 30
+
+  # Firecrawl - Web search and scrape
+  # - name: "firecrawl"
+  #   enabled: false
+  #   # base_url: "https://api.firecrawl.dev"  # 默认值，可省略
+  #   api_keys:
+  #     - "your-firecrawl-api-key-here"
+  #   settings:
+  #     timeout_seconds: 30
+
+  # AnyCrawl - Web scrape only (no search)
+  # - name: "anycrawl"
+  #   enabled: false
+  #   # base_url: "https://api.anycrawl.dev"  # 默认值，可省略
+  #   api_keys:
+  #     - "your-anycrawl-api-key-here"
+  #   settings:
+  #     timeout_seconds: 30
+
+  # SerpAPI - Google search
+  # - name: "serpapi"
+  #   enabled: false
+  #   # base_url: "https://serpapi.com"  # 默认值，可省略
+  #   api_keys:
+  #     - "your-serpapi-api-key-here"
+  #   settings:
+  #     timeout_seconds: 30
+
+  # Serper - Google search and scrape
+  # - name: "serper"
+  #   enabled: false
+  #   # base_url: "https://google.serper.dev"  # 默认值，可省略
+  #   api_keys:
+  #     - "your-serper-api-key-here"
+  #   settings:
+  #     timeout_seconds: 30
