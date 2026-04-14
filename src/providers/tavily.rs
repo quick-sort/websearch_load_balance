@@ -184,12 +184,12 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // 需要 TAVILY_API_KEY 环境变量
+    #[ignore] // 需要 TAVILY_API_KEYS 环境变量
     async fn test_search_integration() {
-        let api_key = std::env::var("TAVILY_API_KEY")
+        let api_key = std::env::var("TAVILY_API_KEYS")
             .unwrap_or_default();
         if api_key.is_empty() {
-            eprintln!("跳过: TAVILY_API_KEY 未设置");
+            eprintln!("跳过: TAVILY_API_KEYS 未设置");
             return;
         }
 
@@ -215,9 +215,9 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 TAVILY_API_KEY 环境变量
     async fn test_fetch_integration() {
-        let api_key = std::env::var("TAVILY_API_KEY").unwrap_or_default();
+        let api_key = std::env::var("TAVILY_API_KEYS").unwrap_or_default();
         if api_key.is_empty() {
-            eprintln!("跳过: TAVILY_API_KEY 未设置");
+            eprintln!("跳过: TAVILY_API_KEYS 未设置");
             return;
         }
 

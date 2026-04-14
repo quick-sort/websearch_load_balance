@@ -61,3 +61,24 @@ impl WebSearchError {
         )
     }
 }
+
+/// Parse API key from environment variable.
+///
+/// Format: `API_KEYS` - JSON array `["key1","key2"]` - returns first key
+pub fn parse_api_key(name: &str) -> String {
+    // Try KEYS format (JSON array)
+    let plural = format!("{}_KEYS", name);
+    if let Ok(v) = std::env::var(&plural) {
+        if !v.is_empty() && v != "[]" {
+            if let Ok(keys) = serde_json::from_str::<Vec<String>>(&v) {
+                if let Some(first) = keys.into_iter().next() {
+                    if !first.is_empty() {
+                        return first;
+                    }
+                }
+            }
+        }
+    }
+
+    String::new()
+}

@@ -442,15 +442,15 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // 需要 TAVILY_API_KEY 和/或 GLM_API_KEY
+    #[ignore] // 需要 TAVILY_API_KEYS 和/或 GLM_API_KEYS
     async fn test_search_integration() {
         let config = match integration_config(&[
-            ("tavily", "TAVILY_API_KEY"),
-            ("zhipu", "GLM_API_KEY"),
+            ("tavily", "TAVILY_API_KEYS"),
+            ("zhipu", "GLM_API_KEYS"),
         ]) {
             Some(c) => c,
             None => {
-                eprintln!("跳过: 未设置 TAVILY_API_KEY 或 GLM_API_KEY");
+                eprintln!("跳过: 未设置 TAVILY_API_KEYS 或 GLM_API_KEYS");
                 return;
             }
         };
@@ -465,15 +465,15 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // 需要 TAVILY_API_KEY 和/或 GLM_API_KEY
+    #[ignore] // 需要 TAVILY_API_KEYS 和/或 GLM_API_KEYS
     async fn test_fetch_integration() {
         let config = match integration_config(&[
-            ("tavily", "TAVILY_API_KEY"),
-            ("zhipu", "GLM_API_KEY"),
+            ("tavily", "TAVILY_API_KEYS"),
+            ("zhipu", "GLM_API_KEYS"),
         ]) {
             Some(c) => c,
             None => {
-                eprintln!("跳过: 未设置 TAVILY_API_KEY 或 GLM_API_KEY");
+                eprintln!("跳过: 未设置 TAVILY_API_KEYS 或 GLM_API_KEYS");
                 return;
             }
         };
@@ -487,14 +487,14 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // 需要 GLM_API_KEY（fallback 场景）
+    #[ignore] // 需要 GLM_API_KEYS（fallback 场景）
     async fn test_fallback_integration() {
         let mut config = match integration_config(&[
-            ("zhipu", "GLM_API_KEY"),
+            ("zhipu", "GLM_API_KEYS"),
         ]) {
             Some(c) => c,
             None => {
-                eprintln!("跳过: 未设置 GLM_API_KEY");
+                eprintln!("跳过: 未设置 GLM_API_KEYS");
                 return;
             }
         };
