@@ -159,8 +159,7 @@ impl ProviderLoadBalancer {
                 }
             };
 
-            let supports_fetch = !["minimaxi", "minimax_io", "bocha", "serpapi"]
-                .contains(&name);
+            let supports_fetch = !["minimaxi", "minimax_io", "bocha", "serpapi"].contains(&name);
             let supports_search = name != "anycrawl";
 
             for (key_index, provider) in provider_instances.into_iter().enumerate() {

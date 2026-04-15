@@ -97,14 +97,25 @@ async fn test_mcp_list_tools() {
     let (url, ct) = start_server(None).await;
 
     let client = TestClient
-        .serve(StreamableHttpClientTransport::from_uri(format!("{}/mcp", url)))
+        .serve(StreamableHttpClientTransport::from_uri(format!(
+            "{}/mcp",
+            url
+        )))
         .await
         .unwrap();
 
     let tools = client.list_all_tools().await.unwrap();
     let names: Vec<String> = tools.iter().map(|t| t.name.to_string()).collect();
-    assert!(names.iter().any(|n| n == "web_search"), "missing web_search: {:?}", names);
-    assert!(names.iter().any(|n| n == "web_fetch"), "missing web_fetch: {:?}", names);
+    assert!(
+        names.iter().any(|n| n == "web_search"),
+        "missing web_search: {:?}",
+        names
+    );
+    assert!(
+        names.iter().any(|n| n == "web_fetch"),
+        "missing web_fetch: {:?}",
+        names
+    );
 
     client.cancel().await.unwrap();
     ct.cancel();
@@ -116,21 +127,32 @@ async fn test_mcp_web_search() {
     let (url, ct) = start_server(None).await;
 
     let client = TestClient
-        .serve(StreamableHttpClientTransport::from_uri(format!("{}/mcp", url)))
+        .serve(StreamableHttpClientTransport::from_uri(format!(
+            "{}/mcp",
+            url
+        )))
         .await
         .unwrap();
 
     let result = client
-        .call_tool(CallToolRequestParams::new("web_search").with_arguments(
-            serde_json::json!({"query": "Rust programming language", "max_results": 3})
-                .as_object().unwrap().clone(),
-        ))
+        .call_tool(
+            CallToolRequestParams::new("web_search").with_arguments(
+                serde_json::json!({"query": "Rust programming language", "max_results": 3})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
         .await
         .unwrap();
 
     assert!(!result.content.is_empty(), "empty result");
     let raw = serde_json::to_string(&result.content[0]).unwrap();
-    assert!(raw.to_lowercase().contains("rust"), "should mention Rust: {}", raw);
+    assert!(
+        raw.to_lowercase().contains("rust"),
+        "should mention Rust: {}",
+        raw
+    );
 
     client.cancel().await.unwrap();
     ct.cancel();
@@ -142,15 +164,22 @@ async fn test_mcp_web_fetch() {
     let (url, ct) = start_server(None).await;
 
     let client = TestClient
-        .serve(StreamableHttpClientTransport::from_uri(format!("{}/mcp", url)))
+        .serve(StreamableHttpClientTransport::from_uri(format!(
+            "{}/mcp",
+            url
+        )))
         .await
         .unwrap();
 
     let result = client
-        .call_tool(CallToolRequestParams::new("web_fetch").with_arguments(
-            serde_json::json!({"url": "https://www.rust-lang.org/"})
-                .as_object().unwrap().clone(),
-        ))
+        .call_tool(
+            CallToolRequestParams::new("web_fetch").with_arguments(
+                serde_json::json!({"url": "https://www.rust-lang.org/"})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
         .await
         .unwrap();
 
@@ -206,7 +235,10 @@ async fn test_mcp_call_nonexistent_tool() {
     let (url, ct) = start_server(None).await;
 
     let client = TestClient
-        .serve(StreamableHttpClientTransport::from_uri(format!("{}/mcp", url)))
+        .serve(StreamableHttpClientTransport::from_uri(format!(
+            "{}/mcp",
+            url
+        )))
         .await
         .unwrap();
 
@@ -234,8 +266,16 @@ async fn test_mcp_no_auth_config_allows_access() {
         .send()
         .await
         .unwrap();
-    assert_ne!(resp.status(), 401, "should not require auth when api_key is not configured");
-    assert!(resp.status().is_success(), "should succeed without auth, got {}", resp.status());
+    assert_ne!(
+        resp.status(),
+        401,
+        "should not require auth when api_key is not configured"
+    );
+    assert!(
+        resp.status().is_success(),
+        "should succeed without auth, got {}",
+        resp.status()
+    );
 
     ct.cancel();
 }

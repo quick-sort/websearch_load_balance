@@ -59,8 +59,15 @@ impl WebSearchMcpServer {
         description = "Search the web for information. Uses multiple providers (Tavily, MiniMax, ZhiPu) \
             with load balancing across API keys for reliability and rate limit handling."
     )]
-    async fn web_search(&self, Parameters(params): Parameters<SearchParams>) -> Result<String, McpError> {
-        tracing::info!("web_search called: query={:?}, max_results={}", params.query, params.max_results);
+    async fn web_search(
+        &self,
+        Parameters(params): Parameters<SearchParams>,
+    ) -> Result<String, McpError> {
+        tracing::info!(
+            "web_search called: query={:?}, max_results={}",
+            params.query,
+            params.max_results
+        );
         match self
             .load_balancer
             .search(&params.query, params.max_results)
@@ -77,7 +84,10 @@ impl WebSearchMcpServer {
         description = "Fetch and extract content from a URL. Returns markdown-formatted content. \
             Uses Tavily or ZhiPu provider (MiniMax does not support fetch)."
     )]
-    async fn web_fetch(&self, Parameters(params): Parameters<FetchParams>) -> Result<String, McpError> {
+    async fn web_fetch(
+        &self,
+        Parameters(params): Parameters<FetchParams>,
+    ) -> Result<String, McpError> {
         tracing::info!("web_fetch called: url={:?}", params.url);
         match self.load_balancer.fetch(&params.url).await {
             Ok(response) => Ok(serde_json::to_string_pretty(&response)

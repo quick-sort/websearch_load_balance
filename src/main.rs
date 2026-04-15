@@ -114,10 +114,12 @@ async fn run_http_server(
     let ct = tokio_util::sync::CancellationToken::new();
     let app = one_search::build_router(server, &mcp_path, api_key, ct.clone());
 
-    let addr: std::net::SocketAddr = format!("{}:{}", host, port).parse()
+    let addr: std::net::SocketAddr = format!("{}:{}", host, port)
+        .parse()
         .context("Invalid address")?;
 
-    let listener = tokio::net::TcpListener::bind(addr).await
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
         .context(format!("Failed to bind to {}", addr))?;
 
     axum::serve(listener, app)

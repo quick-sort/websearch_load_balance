@@ -1,7 +1,7 @@
 # One Search MCP Server
 
 [![CI](https://github.com/quick-sort/one-search/actions/workflows/ci.yml/badge.svg)](https://github.com/quick-sort/one-search/actions/workflows/ci.yml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/quick-sort/one-search)](https://github.com/quick-sort/one-search/pkgs/container/one-search)
+[![GHCR](https://ghcr-badge.egpl.dev/quick-sort/one-search/latest_tag?trim=major&label=latest)](https://github.com/quick-sort/one-search/pkgs/container/one-search)
 
 A Rust-based MCP (Model Context Protocol) server that provides `web_search` and `web_fetch` tools with load balancing across multiple providers and API keys.
 
