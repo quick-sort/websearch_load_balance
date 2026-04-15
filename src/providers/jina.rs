@@ -73,10 +73,7 @@ impl WebSearchProvider for JinaProvider {
             ));
         }
 
-        let search_url = format!(
-            "{}/",
-            self.base_url.replace("://r.", "://s.")
-        );
+        let search_url = format!("{}/", self.base_url.replace("://r.", "://s."));
 
         let resp = self
             .client
@@ -152,8 +149,7 @@ mod tests {
 
     #[test]
     fn test_provider_name() {
-        let provider =
-            JinaProvider::new("https://r.jina.ai".to_string(), String::new());
+        let provider = JinaProvider::new("https://r.jina.ai".to_string(), String::new());
         assert_eq!(provider.name(), "jina");
     }
 
@@ -161,8 +157,7 @@ mod tests {
     #[ignore] // 需要网络访问
     async fn test_fetch_integration() {
         let api_key = crate::error::parse_api_key("JINA_API_KEYS");
-        let provider =
-            JinaProvider::new("https://r.jina.ai".to_string(), api_key);
+        let provider = JinaProvider::new("https://r.jina.ai".to_string(), api_key);
 
         let result = provider.fetch("https://www.rust-lang.org/").await;
         assert!(result.is_ok(), "获取失败: {:?}", result);

@@ -64,10 +64,7 @@ impl WebSearchProvider for BraveProvider {
             .get(&url)
             .header("X-Subscription-Token", &self.api_key)
             .header("Accept", "application/json")
-            .query(&[
-                ("q", query),
-                ("count", &count.to_string()),
-            ])
+            .query(&[("q", query), ("count", &count.to_string())])
             .send()
             .await?;
 
@@ -84,12 +81,10 @@ impl WebSearchProvider for BraveProvider {
             .into_iter()
             .map(|r| {
                 let snippet = match (&r.description, &r.extra_snippets) {
-                    (Some(desc), Some(extras)) => {
-                        std::iter::once(desc.as_str())
-                            .chain(extras.iter().map(|s| s.as_str()))
-                            .collect::<Vec<_>>()
-                            .join("\n")
-                    }
+                    (Some(desc), Some(extras)) => std::iter::once(desc.as_str())
+                        .chain(extras.iter().map(|s| s.as_str()))
+                        .collect::<Vec<_>>()
+                        .join("\n"),
                     (Some(desc), None) => desc.clone(),
                     (None, Some(extras)) => extras.join("\n"),
                     (None, None) => String::new(),
@@ -97,7 +92,9 @@ impl WebSearchProvider for BraveProvider {
                 let favicon = reqwest::Url::parse(&r.url)
                     .ok()
                     .and_then(|u| u.host_str().map(|h| h.to_string()))
-                    .map(|domain| format!("https://www.google.com/s2/favicons?domain={domain}&sz=32"));
+                    .map(|domain| {
+                        format!("https://www.google.com/s2/favicons?domain={domain}&sz=32")
+                    });
                 SearchResult {
                     title: r.title,
                     link: r.url,
@@ -143,8 +140,7 @@ mod tests {
             return;
         }
 
-        let provider =
-            BraveProvider::new("https://api.search.brave.com".to_string(), api_key);
+        let provider = BraveProvider::new("https://api.search.brave.com".to_string(), api_key);
 
         let result = provider.search("Rust programming language", 5).await;
         assert!(result.is_ok(), "搜索失败: {:?}", result);

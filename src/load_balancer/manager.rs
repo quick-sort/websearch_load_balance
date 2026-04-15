@@ -166,8 +166,13 @@ impl ProviderLoadBalancer {
                     })
                     .collect(),
                 "jina" => {
-                    let key = provider_config.api_keys.first().cloned().unwrap_or_default();
-                    vec![Arc::new(JinaProvider::new(base_url.to_string(), key)) as Arc<dyn WebSearchProvider>]
+                    let key = provider_config
+                        .api_keys
+                        .first()
+                        .cloned()
+                        .unwrap_or_default();
+                    vec![Arc::new(JinaProvider::new(base_url.to_string(), key))
+                        as Arc<dyn WebSearchProvider>]
                 }
                 _ => {
                     tracing::warn!("Unknown provider: {}", provider_config.name);
@@ -175,7 +180,8 @@ impl ProviderLoadBalancer {
                 }
             };
 
-            let supports_fetch = !["minimaxi", "minimax_io", "bocha", "serpapi", "brave"].contains(&name);
+            let supports_fetch =
+                !["minimaxi", "minimax_io", "bocha", "serpapi", "brave"].contains(&name);
             let supports_search = !["anycrawl"].contains(&name);
 
             for (key_index, provider) in provider_instances.into_iter().enumerate() {
