@@ -6,8 +6,8 @@ services:
     image: one_search:latest
     container_name: one-search-mcp
     restart: unless-stopped
-    stdin_open: true
-    tty: true
+    ports:
+      - "8080:8080"
     volumes:
       - ./config.yaml:/app/config.yaml:ro
     environment:

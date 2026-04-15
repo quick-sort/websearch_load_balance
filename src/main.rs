@@ -2,7 +2,6 @@
 //!
 //! An MCP server that provides web_search and web_fetch tools
 //! with load balancing across multiple providers and API keys.
-//! Supports stdio transport (HTTP can be added later).
 
 use std::path::PathBuf;
 
@@ -13,12 +12,10 @@ use one_search::WebSearchError;
 use rmcp::transport::async_rw::AsyncRwTransport;
 use tracing_subscriber::EnvFilter;
 
-/// Default config file path: ./config.yaml
 fn default_config_path() -> PathBuf {
     PathBuf::from("config.yaml")
 }
 
-/// Fallback config file path: ~/.config/websearch.yaml
 fn fallback_config_path() -> PathBuf {
     if let Some(home) = std::env::var_os("HOME") {
         PathBuf::from(home).join(".config").join("websearch.yaml")
@@ -27,9 +24,7 @@ fn fallback_config_path() -> PathBuf {
     }
 }
 
-/// Try to load config from candidate paths.
 fn load_config() -> Result<Config, WebSearchError> {
-    // Check command line args first
     let args: Vec<String> = std::env::args().collect();
     for (i, arg) in args.iter().enumerate() {
         if arg == "--config" {
@@ -43,7 +38,6 @@ fn load_config() -> Result<Config, WebSearchError> {
         }
     }
 
-    // Try default path, then fallback
     let default_path = default_config_path();
     if default_path.exists() {
         tracing::info!("Loading config from: {:?}", default_path);
@@ -64,7 +58,6 @@ fn load_config() -> Result<Config, WebSearchError> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Initialize logging
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
@@ -74,24 +67,65 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Starting web search load balance MCP server");
 
-    // Load configuration
     let config = load_config().context("Failed to load configuration")?;
 
     let provider_count = config.enabled_providers().len();
     tracing::info!("Loaded {} provider(s)", provider_count);
 
-    tracing::info!("MCP server initialized, waiting for connections via stdio...");
-
-    // Create MCP server
     let server = WebSearchMcpServer::new(&config).context("Failed to create MCP server")?;
 
-    // Serve via stdio transport
+    // Check HTTP config
+    if let Some(http) = &config.server.http {
+        if http.enabled {
+            run_http_server(server, http.clone()).await?;
+            return Ok(());
+        }
+    }
+
+    // Default: stdio mode
+    tracing::info!("MCP server initialized, waiting for connections via stdio...");
+
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
     let transport = AsyncRwTransport::new_server(stdin, stdout);
     rmcp::service::serve_server(server, transport)
         .await
         .context("Failed to serve MCP")?;
+
+    Ok(())
+}
+
+async fn run_http_server(
+    server: WebSearchMcpServer,
+    http_config: one_search::config::HttpConfig,
+) -> anyhow::Result<()> {
+    let host = http_config.host;
+    let port = http_config.port;
+    let mcp_path = http_config.mcp_path.unwrap_or_else(|| "/mcp".to_string());
+    let api_key = http_config.api_key;
+
+    tracing::info!("HTTP server listening on http://{}:{}", host, port);
+    tracing::info!("MCP endpoint: http://{}:{}{}", host, port, mcp_path);
+
+    if api_key.is_some() {
+        tracing::info!("API key authentication enabled");
+    }
+
+    let ct = tokio_util::sync::CancellationToken::new();
+    let app = one_search::build_router(server, &mcp_path, api_key, ct.clone());
+
+    let addr: std::net::SocketAddr = format!("{}:{}", host, port).parse()
+        .context("Invalid address")?;
+
+    let listener = tokio::net::TcpListener::bind(addr).await
+        .context(format!("Failed to bind to {}", addr))?;
+
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async move {
+            tokio::signal::ctrl_c().await.unwrap();
+            ct.cancel();
+        })
+        .await?;
 
     Ok(())
 }

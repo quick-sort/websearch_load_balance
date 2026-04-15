@@ -16,22 +16,25 @@ use std::sync::Arc;
 use tracing;
 
 /// A provider instance with an associated key index.
+#[derive(Clone)]
 struct ProviderEntry {
     provider: Arc<dyn WebSearchProvider>,
     provider_name: String,
     key_index: usize,
     supports_fetch: bool,
+    supports_search: bool,
 }
 
 /// Provider load balancer.
 ///
 /// Manages multiple providers (each with potentially multiple API keys)
 /// and rotates between them according to the configured strategy.
+#[derive(Clone)]
 pub struct ProviderLoadBalancer {
     /// All provider entries (provider + key combinations), in config priority order.
     entries: Vec<ProviderEntry>,
     /// Strategy for selecting between providers.
-    provider_strategy: Box<dyn SelectionStrategy>,
+    provider_strategy: Arc<dyn SelectionStrategy>,
     /// Whether to fallback to next provider on failure.
     fallback: bool,
 }
@@ -77,90 +80,95 @@ impl ProviderLoadBalancer {
                 );
                 continue;
             }
-            let provider_instances: Vec<Arc<dyn WebSearchProvider>> =
-                match provider_config.name.as_str() {
-                    "tavily" => provider_config
+
+            let name = provider_config.name.as_str();
+            let provider_instances: Vec<Arc<dyn WebSearchProvider>> = match name {
+                "tavily" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(TavilyProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                "minimaxi" | "minimax_io" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(MiniMaxProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                "zhipu" | "zhipu_coding" => {
+                    let api_variant = provider_config.settings.variant();
+                    provider_config
                         .api_keys
                         .iter()
                         .map(|key| {
-                            Arc::new(TavilyProvider::new(base_url.to_string(), key.clone()))
-                                as Arc<dyn WebSearchProvider>
+                            Arc::new(ZhiPuProvider::with_variant(
+                                base_url.to_string(),
+                                key.clone(),
+                                api_variant,
+                            )) as Arc<dyn WebSearchProvider>
                         })
-                        .collect(),
-                    "minimaxi" | "minimax_io" => provider_config
-                        .api_keys
-                        .iter()
-                        .map(|key| {
-                            Arc::new(MiniMaxProvider::new(base_url.to_string(), key.clone()))
-                                as Arc<dyn WebSearchProvider>
-                        })
-                        .collect(),
-                    "zhipu" => {
-                        let api_variant = provider_config.settings.variant();
-                        provider_config
-                            .api_keys
-                            .iter()
-                            .map(|key| {
-                                Arc::new(ZhiPuProvider::with_variant(
-                                    base_url.to_string(),
-                                    key.clone(),
-                                    api_variant,
-                                )) as Arc<dyn WebSearchProvider>
-                            })
-                            .collect()
-                    }
-                    "bocha" => provider_config
-                        .api_keys
-                        .iter()
-                        .map(|key| {
-                            Arc::new(BochaProvider::new(base_url.to_string(), key.clone()))
-                                as Arc<dyn WebSearchProvider>
-                        })
-                        .collect(),
-                    "firecrawl" => provider_config
-                        .api_keys
-                        .iter()
-                        .map(|key| {
-                            Arc::new(FirecrawlProvider::new(base_url.to_string(), key.clone()))
-                                as Arc<dyn WebSearchProvider>
-                        })
-                        .collect(),
-                    "anycrawl" => provider_config
-                        .api_keys
-                        .iter()
-                        .map(|key| {
-                            Arc::new(AnycrawlProvider::new(base_url.to_string(), key.clone()))
-                                as Arc<dyn WebSearchProvider>
-                        })
-                        .collect(),
-                    "serpapi" => provider_config
-                        .api_keys
-                        .iter()
-                        .map(|key| {
-                            Arc::new(SerpApiProvider::new(base_url.to_string(), key.clone()))
-                                as Arc<dyn WebSearchProvider>
-                        })
-                        .collect(),
-                    "serper" => provider_config
-                        .api_keys
-                        .iter()
-                        .map(|key| {
-                            Arc::new(SerperProvider::new(base_url.to_string(), key.clone()))
-                                as Arc<dyn WebSearchProvider>
-                        })
-                        .collect(),
-                    _ => {
-                        tracing::warn!("Unknown provider: {}", provider_config.name);
-                        continue;
-                    }
-                };
+                        .collect()
+                }
+                "bocha" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(BochaProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                "firecrawl" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(FirecrawlProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                "anycrawl" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(AnycrawlProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                "serpapi" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(SerpApiProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                "serper" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(SerperProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                _ => {
+                    tracing::warn!("Unknown provider: {}", provider_config.name);
+                    continue;
+                }
+            };
+
+            let supports_fetch = !["minimaxi", "minimax_io", "bocha", "serpapi"]
+                .contains(&name);
+            let supports_search = name != "anycrawl";
 
             for (key_index, provider) in provider_instances.into_iter().enumerate() {
                 entries.push(ProviderEntry {
                     provider_name: provider_config.name.clone(),
                     key_index,
-                    supports_fetch: !["minimaxi", "minimax_io", "bocha", "serpapi"]
-                        .contains(&provider_config.name.as_str()), // MiniMax, Bocha, and SerpAPI don't support fetch
+                    supports_fetch,
+                    supports_search,
                     provider,
                 });
             }
@@ -176,7 +184,8 @@ impl ProviderLoadBalancer {
             return Err(WebSearchError::NoProvidersAvailable);
         }
 
-        let provider_strategy = create_strategy(config.provider_strategy.r#type);
+        let provider_strategy: Arc<dyn SelectionStrategy> =
+            create_strategy(config.provider_strategy.r#type).into();
 
         tracing::info!(
             "Load balancer initialized with {} provider+key entries",
@@ -190,35 +199,34 @@ impl ProviderLoadBalancer {
         })
     }
 
-    /// Select the next provider entry according to the strategy.
-    fn select_provider(&self) -> Option<&ProviderEntry> {
-        if self.entries.is_empty() {
-            return None;
-        }
-        let index = self.provider_strategy.select_index(self.entries.len());
-        self.entries.get(index)
-    }
-
     /// Search using the configured providers with load balancing.
     pub async fn search(
         &self,
         query: &str,
         max_results: u32,
     ) -> Result<SearchResponse, WebSearchError> {
+        // Filter to entries that support search
+        let search_indices: Vec<usize> = self
+            .entries
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| e.supports_search)
+            .map(|(i, _)| i)
+            .collect();
+
+        if search_indices.is_empty() {
+            return Err(WebSearchError::NoProvidersAvailable);
+        }
+
         if self.fallback {
-            // Try all providers in strategy order
-            let mut tried = vec![false; self.entries.len()];
+            let start = self.provider_strategy.select_index(search_indices.len());
             let mut errors = Vec::new();
 
-            for _ in 0..self.entries.len() {
-                let index = self.provider_strategy.select_index(self.entries.len());
-                if tried[index] {
-                    continue;
-                }
-                tried[index] = true;
+            for offset in 0..search_indices.len() {
+                let idx = (start + offset) % search_indices.len();
+                let entry = &self.entries[search_indices[idx]];
 
-                let entry = &self.entries[index];
-                tracing::debug!(
+                tracing::info!(
                     "Trying provider '{}' (key #{})",
                     entry.provider_name,
                     entry.key_index
@@ -226,7 +234,7 @@ impl ProviderLoadBalancer {
 
                 match entry.provider.search(query, max_results).await {
                     Ok(response) => {
-                        tracing::debug!(
+                        tracing::info!(
                             "Search succeeded with provider '{}' (key #{})",
                             entry.provider_name,
                             entry.key_index
@@ -254,21 +262,17 @@ impl ProviderLoadBalancer {
                     .join(", ")
             )))
         } else {
-            // No fallback - just try the selected provider
-            let entry = self
-                .select_provider()
-                .ok_or(WebSearchError::NoProvidersAvailable)?;
-
+            let index = self.provider_strategy.select_index(search_indices.len());
+            let entry = &self.entries[search_indices[index]];
             entry.provider.search(query, max_results).await
         }
     }
 
     /// Fetch URL content using the configured providers with load balancing.
     ///
-    /// Only providers that support fetch will be used (skips MiniMax).
+    /// Only providers that support fetch will be used.
     pub async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
-        // Get indices of providers that support fetch
-        let fetch_entries: Vec<usize> = self
+        let fetch_indices: Vec<usize> = self
             .entries
             .iter()
             .enumerate()
@@ -276,26 +280,21 @@ impl ProviderLoadBalancer {
             .map(|(i, _)| i)
             .collect();
 
-        if fetch_entries.is_empty() {
+        if fetch_indices.is_empty() {
             return Err(WebSearchError::AllProvidersFailed(
                 "No providers support web fetch".to_string(),
             ));
         }
 
         if self.fallback {
-            let mut tried = vec![false; fetch_entries.len()];
+            let start = self.provider_strategy.select_index(fetch_indices.len());
+            let mut errors = Vec::new();
 
-            for _ in 0..fetch_entries.len() {
-                let strategy_index = self.provider_strategy.select_index(fetch_entries.len());
-                if tried[strategy_index] {
-                    continue;
-                }
-                tried[strategy_index] = true;
+            for offset in 0..fetch_indices.len() {
+                let idx = (start + offset) % fetch_indices.len();
+                let entry = &self.entries[fetch_indices[idx]];
 
-                let entry_index = fetch_entries[strategy_index];
-                let entry = &self.entries[entry_index];
-
-                tracing::debug!(
+                tracing::info!(
                     "Trying fetch with provider '{}' (key #{})",
                     entry.provider_name,
                     entry.key_index
@@ -305,16 +304,22 @@ impl ProviderLoadBalancer {
                     Ok(response) => return Ok(response),
                     Err(e) => {
                         tracing::warn!("Provider '{}' fetch failed: {}", entry.provider_name, e);
+                        errors.push((entry.provider_name.clone(), entry.key_index, e));
                     }
                 }
             }
 
-            Err(WebSearchError::AllProvidersFailed(
-                "All providers failed to fetch URL".to_string(),
-            ))
+            Err(WebSearchError::AllProvidersFailed(format!(
+                "All providers failed to fetch: {}",
+                errors
+                    .iter()
+                    .map(|(name, idx, e)| format!("{}[{}]={}", name, idx, e))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )))
         } else {
-            let index = self.provider_strategy.select_index(fetch_entries.len());
-            let entry = &self.entries[fetch_entries[index]];
+            let index = self.provider_strategy.select_index(fetch_indices.len());
+            let entry = &self.entries[fetch_indices[index]];
             entry.provider.fetch(url).await
         }
     }
@@ -394,10 +399,10 @@ mod tests {
         let providers: Vec<ProviderConfig> = keys
             .iter()
             .filter_map(|&(name, key)| {
-                let key_value = match std::env::var(key) {
-                    Ok(v) if !v.is_empty() => v,
-                    _ => return None,
-                };
+                let key_value = crate::error::parse_api_key(key);
+                if key_value.is_empty() {
+                    return None;
+                }
                 let (base_url, provider_name) = match name {
                     "tavily" => ("https://api.tavily.com".to_string(), "tavily".to_string()),
                     "minimaxi" => (

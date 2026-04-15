@@ -79,7 +79,7 @@ impl WebSearchProvider for SerpApiProvider {
     ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/search", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .get(&url)
             .query(&[
@@ -91,9 +91,13 @@ impl WebSearchProvider for SerpApiProvider {
                 ("api_key", &self.api_key),
             ])
             .send()
-            .await?
-            .json::<SerpApiResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<SerpApiResponse>().await?;
 
         // Build search results
         let organic: Vec<SearchResult> = response

@@ -128,7 +128,7 @@ impl WebSearchProvider for ZhiPuProvider {
         };
         let url = format!("{}{}/web_search", self.base_url, api_path);
 
-        let response = self
+        let resp = self
             .client
             .post(&url)
             .header("Authorization", self.auth_header())
@@ -139,9 +139,13 @@ impl WebSearchProvider for ZhiPuProvider {
                 "count": max_results
             }))
             .send()
-            .await?
-            .json::<ZhiPuSearchResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<ZhiPuSearchResponse>().await?;
 
         Ok(SearchResponse {
             organic: response
@@ -176,7 +180,7 @@ impl WebSearchProvider for ZhiPuProvider {
         };
         let fetch_url = format!("{}{}/reader", self.base_url, api_path);
 
-        let response = self
+        let resp = self
             .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
@@ -186,9 +190,13 @@ impl WebSearchProvider for ZhiPuProvider {
                 "return_format": "markdown"
             }))
             .send()
-            .await?
-            .json::<ZhiPuReaderResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<ZhiPuReaderResponse>().await?;
 
         let content = response.reader_result.content.unwrap_or_default();
 
@@ -225,7 +233,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 GLM_API_KEYS 环境变量
     async fn test_search_integration() {
-        let api_key = std::env::var("GLM_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("GLM_API_KEYS");
         if api_key.is_empty() {
             eprintln!("跳过: GLM_API_KEYS 未设置");
             return;
@@ -249,7 +257,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 GLM_API_KEYS 环境变量
     async fn test_fetch_integration() {
-        let api_key = std::env::var("GLM_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("GLM_API_KEYS");
         if api_key.is_empty() {
             eprintln!("跳过: GLM_API_KEYS 未设置");
             return;
@@ -267,7 +275,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 GLM_CODING_API_KEYS 环境变量
     async fn test_search_coding_integration() {
-        let api_key = std::env::var("GLM_CODING_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("GLM_CODING_API_KEYS");
         if api_key.is_empty() {
             eprintln!("跳过: GLM_CODING_API_KEYS 未设置");
             return;
@@ -296,7 +304,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 GLM_CODING_API_KEYS 环境变量
     async fn test_fetch_coding_integration() {
-        let api_key = std::env::var("GLM_CODING_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("GLM_CODING_API_KEYS");
         if api_key.is_empty() {
             eprintln!("跳过: GLM_CODING_API_KEYS 未设置");
             return;

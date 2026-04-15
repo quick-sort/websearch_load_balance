@@ -7,6 +7,13 @@ server:
   name: "one_search"
   version: "0.1.0"
   log_level: "info"
+  # HTTP server configuration (not yet implemented - use stdio with reverse proxy)
+  # http:
+  #   enabled: true
+  #   host: "0.0.0.0"
+  #   port: 8080
+  #   api_key: "your-api-key"  # optional: Bearer token authentication
+  #   mcp_path: "/mcp"  # MCP endpoint path
 
 # Strategy for API key selection within a provider
 key_strategy:

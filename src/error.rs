@@ -67,21 +67,31 @@ impl WebSearchError {
 
 /// Parse API key from environment variable.
 ///
-/// Format: `API_KEYS` - JSON array `["key1","key2"]` - returns first key
-pub fn parse_api_key(name: &str) -> String {
-    // Try KEYS format (JSON array)
-    let plural = format!("{}_KEYS", name);
-    if let Ok(v) = std::env::var(&plural) {
-        if !v.is_empty() && v != "[]" {
-            if let Ok(keys) = serde_json::from_str::<Vec<String>>(&v) {
-                if let Some(first) = keys.into_iter().next() {
-                    if !first.is_empty() {
-                        return first;
-                    }
-                }
+/// Supports JSON array `["key1","key2"]`, bare bracket `[key1,key2]`, or plain string.
+/// Returns the first key found.
+pub fn parse_api_key(env_var: &str) -> String {
+    let v = match std::env::var(env_var) {
+        Ok(v) if !v.is_empty() => v,
+        _ => return String::new(),
+    };
+    // Try JSON array format
+    if let Ok(keys) = serde_json::from_str::<Vec<String>>(&v) {
+        if let Some(first) = keys.into_iter().next() {
+            if !first.is_empty() {
+                return first;
             }
         }
     }
-
-    String::new()
+    // Try bare bracket format: [key1,key2]
+    let trimmed = v.trim();
+    if trimmed.starts_with('[') && trimmed.ends_with(']') {
+        let inner = &trimmed[1..trimmed.len() - 1];
+        if let Some(first) = inner.split(',').next() {
+            let key = first.trim().trim_matches('"').trim_matches('\'');
+            if !key.is_empty() {
+                return key.to_string();
+            }
+        }
+    }
+    v
 }

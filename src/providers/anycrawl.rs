@@ -64,7 +64,7 @@ impl WebSearchProvider for AnycrawlProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let fetch_url = format!("{}/v1/scrape", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
@@ -76,9 +76,13 @@ impl WebSearchProvider for AnycrawlProvider {
                 "wait_for": 2000
             }))
             .send()
-            .await?
-            .json::<AnyCrawlResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<AnyCrawlResponse>().await?;
 
         match response.data {
             Some(data) if data.status.as_deref() == Some("completed") => {

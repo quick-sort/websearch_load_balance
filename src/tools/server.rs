@@ -5,7 +5,7 @@ use crate::error::WebSearchError;
 use crate::load_balancer::ProviderLoadBalancer;
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
-use rmcp::model::ServerInfo;
+use rmcp::model::{ServerCapabilities, ServerInfo};
 use rmcp::schemars;
 use rmcp::{tool, tool_handler, tool_router, ErrorData as McpError, ServerHandler};
 use schemars::JsonSchema;
@@ -34,6 +34,7 @@ pub struct FetchParams {
 }
 
 /// MCP server for web search load balancing.
+#[derive(Clone)]
 pub struct WebSearchMcpServer {
     #[allow(dead_code)]
     tool_router: ToolRouter<Self>,
@@ -58,21 +59,17 @@ impl WebSearchMcpServer {
         description = "Search the web for information. Uses multiple providers (Tavily, MiniMax, ZhiPu) \
             with load balancing across API keys for reliability and rate limit handling."
     )]
-    fn web_search(&self, Parameters(params): Parameters<SearchParams>) -> Result<String, McpError> {
-        // Note: Using sync function for rmcp compatibility
-        // For async, would need different approach
-        let runtime = tokio::runtime::Handle::current();
-        runtime.block_on(async {
-            match self
-                .load_balancer
-                .search(&params.query, params.max_results)
-                .await
-            {
-                Ok(response) => Ok(serde_json::to_string_pretty(&response)
-                    .unwrap_or_else(|_| format!("{:?}", response))),
-                Err(e) => Ok(format!("Search failed: {}", e)),
-            }
-        })
+    async fn web_search(&self, Parameters(params): Parameters<SearchParams>) -> Result<String, McpError> {
+        tracing::info!("web_search called: query={:?}, max_results={}", params.query, params.max_results);
+        match self
+            .load_balancer
+            .search(&params.query, params.max_results)
+            .await
+        {
+            Ok(response) => Ok(serde_json::to_string_pretty(&response)
+                .unwrap_or_else(|_| format!("{:?}", response))),
+            Err(e) => Ok(format!("Search failed: {}", e)),
+        }
     }
 
     /// Web fetch tool - fetches and extracts content from a URL.
@@ -80,15 +77,13 @@ impl WebSearchMcpServer {
         description = "Fetch and extract content from a URL. Returns markdown-formatted content. \
             Uses Tavily or ZhiPu provider (MiniMax does not support fetch)."
     )]
-    fn web_fetch(&self, Parameters(params): Parameters<FetchParams>) -> Result<String, McpError> {
-        let runtime = tokio::runtime::Handle::current();
-        runtime.block_on(async {
-            match self.load_balancer.fetch(&params.url).await {
-                Ok(response) => Ok(serde_json::to_string_pretty(&response)
-                    .unwrap_or_else(|_| format!("{:?}", response))),
-                Err(e) => Ok(format!("Fetch failed: {}", e)),
-            }
-        })
+    async fn web_fetch(&self, Parameters(params): Parameters<FetchParams>) -> Result<String, McpError> {
+        tracing::info!("web_fetch called: url={:?}", params.url);
+        match self.load_balancer.fetch(&params.url).await {
+            Ok(response) => Ok(serde_json::to_string_pretty(&response)
+                .unwrap_or_else(|_| format!("{:?}", response))),
+            Err(e) => Ok(format!("Fetch failed: {}", e)),
+        }
     }
 }
 
@@ -105,6 +100,6 @@ impl Default for WebSearchMcpServer {
 #[tool_handler]
 impl ServerHandler for WebSearchMcpServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo::default()
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
     }
 }

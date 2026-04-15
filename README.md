@@ -12,7 +12,8 @@ A Rust-based MCP (Model Context Protocol) server that provides `web_search` and 
 - **Provider Failover**: Automatic fallback to next provider on failure
 - **YAML Configuration**: Flexible config via `config.yaml`
 - **Default Base URLs**: All known provider endpoints are pre-configured
-- **stdio Transport**: Works with Claude Desktop, Cursor and other MCP clients
+- **Dual Transport**: stdio mode and HTTP (Streamable HTTP) mode
+- **HTTP Authentication**: Optional Bearer token for HTTP mode
 
 ## Supported Providers
 
@@ -67,14 +68,34 @@ providers:
 ### 4. Run
 
 ```bash
+# stdio mode (default)
 cargo run --release
-# or with custom config
+
+# HTTP mode (enable in config.yaml)
+cargo run --release -- --config /path/to/config.yaml
+
+# custom config
 cargo run --release -- --config /path/to/config.yaml
 ```
 
 ### 5. MCP Client Configuration
 
-#### Claude Desktop
+#### Claude Code (HTTP mode)
+
+Add to `.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "onesearch": {
+      "type": "http",
+      "url": "http://127.0.0.1:8080/mcp"
+    }
+  }
+}
+```
+
+#### Claude Desktop (stdio mode)
 
 Add to `claude_desktop_config.json`:
 
@@ -82,7 +103,7 @@ Add to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "websearch": {
-      "command": "/path/to/target/release/one-search",
+      "command": "/path/to/target/release/one_search",
       "args": []
     }
   }
@@ -91,9 +112,27 @@ Add to `claude_desktop_config.json`:
 
 #### Cursor
 
-`Preferences > MCP > Add new global MCP Server`, enter the command path.
+`Preferences > MCP > Add new global MCP Server`, enter the command path or HTTP URL.
 
 ## Configuration
+
+### HTTP Server
+
+Enable HTTP mode in `config.yaml`:
+
+```yaml
+server:
+  http:
+    enabled: true
+    host: "0.0.0.0"
+    port: 8080
+    api_key: "your-key"   # optional Bearer token authentication
+    mcp_path: "/mcp"      # MCP endpoint path
+```
+
+When `http.enabled` is `true`, the server starts as an HTTP server using MCP Streamable HTTP transport. When `false` or omitted, it runs in stdio mode.
+
+The `api_key` is optional. When set, all requests to the MCP endpoint require `Authorization: Bearer <api_key>` header. The `/health` endpoint is always public.
 
 ### Load Balancing Strategy
 
@@ -167,20 +206,21 @@ Returns:
 }
 ```
 
-> `web_fetch` skips providers that don't support it (MiniMax, Bocha, SerpAPI, AnyCrawl).
+> `web_fetch` skips providers that don't support it (MiniMax, Bocha, SerpAPI).
 
 ## Testing
 
 ```bash
-cargo test           # unit tests only
-cargo test -- --ignored  # integration tests (requires API keys)
+cargo test                    # unit tests only
+cargo test -- --ignored       # integration tests (requires API keys in env)
+cargo test --test http_mcp_test -- --ignored  # HTTP MCP integration tests
 ```
 
 ## Docker
 
 ```bash
 docker build -t one-search .
-docker run -it --rm -v $(pwd)/config.yaml:/app/config.yaml:ro one-search
+docker run -d --rm -p 8080:8080 -v $(pwd)/config.yaml:/app/config.yaml:ro one-search
 ```
 
 ### Docker Compose
@@ -219,8 +259,8 @@ git push origin v0.1.0
 
 ```bash
 RUST_LOG=debug cargo run   # verbose
-RUST_LOG=info cargo run  # default
-RUST_LOG=error cargo run  # errors only
+RUST_LOG=info cargo run    # default (shows provider selection)
+RUST_LOG=error cargo run   # errors only
 ```
 
 ## License

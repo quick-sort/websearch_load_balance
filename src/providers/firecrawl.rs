@@ -93,7 +93,7 @@ impl WebSearchProvider for FirecrawlProvider {
     ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/v2/search", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&url)
             .header("Authorization", self.auth_header())
@@ -103,9 +103,13 @@ impl WebSearchProvider for FirecrawlProvider {
                 "limit": max_results
             }))
             .send()
-            .await?
-            .json::<FirecrawlSearchResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<FirecrawlSearchResponse>().await?;
 
         if !response.success {
             return Err(WebSearchError::ProviderError(
@@ -139,7 +143,7 @@ impl WebSearchProvider for FirecrawlProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let fetch_url = format!("{}/v2/scrape", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
@@ -149,9 +153,13 @@ impl WebSearchProvider for FirecrawlProvider {
                 "formats": ["markdown"]
             }))
             .send()
-            .await?
-            .json::<FirecrawlScrapeResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<FirecrawlScrapeResponse>().await?;
 
         if !response.success {
             return Err(WebSearchError::ProviderError(

@@ -81,7 +81,7 @@ impl WebSearchProvider for SerperProvider {
     ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/search", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&url)
             .header("X-API-KEY", self.auth_header())
@@ -91,9 +91,13 @@ impl WebSearchProvider for SerperProvider {
                 "num": max_results
             }))
             .send()
-            .await?
-            .json::<SerperSearchResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<SerperSearchResponse>().await?;
 
         let organic: Vec<SearchResult> = response
             .organic
@@ -124,7 +128,7 @@ impl WebSearchProvider for SerperProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let scrape_url = format!("{}/scrape", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&scrape_url)
             .header("X-API-KEY", self.auth_header())
@@ -133,9 +137,13 @@ impl WebSearchProvider for SerperProvider {
                 "url": url
             }))
             .send()
-            .await?
-            .json::<SerperScrapeResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<SerperScrapeResponse>().await?;
 
         let content = response.text.unwrap_or_default();
         let title = response.metadata.and_then(|m| m.title);

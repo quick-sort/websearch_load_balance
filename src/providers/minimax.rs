@@ -111,7 +111,7 @@ impl WebSearchProvider for MiniMaxProvider {
     ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/v1/coding_plan/search", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&url)
             .header("Authorization", self.auth_header())
@@ -122,9 +122,13 @@ impl WebSearchProvider for MiniMaxProvider {
                 "num": max_results
             }))
             .send()
-            .await?
-            .json::<MiniMaxSearchResponse>()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+        let response = resp.json::<MiniMaxSearchResponse>().await?;
 
         self.check_response(&response)?;
 
@@ -179,11 +183,11 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // 需要 MINIMAX_API_KEYS 环境变量
+    #[ignore] // 需要 MINIMAXI_API_KEYS 环境变量
     async fn test_search_integration() {
-        let api_key = std::env::var("MINIMAX_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("MINIMAXI_API_KEYS");
         if api_key.is_empty() {
-            eprintln!("跳过: MINIMAX_API_KEYS 未设置");
+            eprintln!("跳过: MINIMAXI_API_KEYS 未设置");
             return;
         }
 

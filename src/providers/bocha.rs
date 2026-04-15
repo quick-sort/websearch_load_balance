@@ -91,7 +91,7 @@ impl WebSearchProvider for BochaProvider {
     ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/v1/web-search", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&url)
             .header("Authorization", self.auth_header())
@@ -103,9 +103,15 @@ impl WebSearchProvider for BochaProvider {
                 "count": max_results
             }))
             .send()
-            .await?
-            .json::<BochaSearchResponse>()
             .await?;
+
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+
+        let response = resp.json::<BochaSearchResponse>().await?;
 
         self.check_response(&response)?;
 
@@ -165,7 +171,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 BOCHA_API_KEYS 环境变量
     async fn test_search_integration() {
-        let api_key = std::env::var("BOCHA_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("BOCHA_API_KEYS");
         if api_key.is_empty() {
             eprintln!("跳过: BOCHA_API_KEYS 未设置");
             return;

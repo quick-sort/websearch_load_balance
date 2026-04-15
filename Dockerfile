@@ -41,5 +41,7 @@ USER appuser
 # Default config path
 ENV CONFIG_PATH=/app/config.yaml
 
-# Use stdin/stdout for MCP communication
+# Expose HTTP port (used when http.enabled=true in config)
+EXPOSE 8080
+
 ENTRYPOINT ["one_search"]

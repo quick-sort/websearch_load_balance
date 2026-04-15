@@ -46,6 +46,7 @@ struct TavilyExtractResponse {
 /// Tavily extract result.
 #[derive(Debug, Deserialize)]
 struct TavilyExtractResult {
+    #[allow(dead_code)]
     url: String,
     #[serde(alias = "content")] // fallback if raw_content not present
     raw_content: String,
@@ -57,6 +58,7 @@ struct TavilyExtractResult {
 /// Tavily failed extract result.
 #[derive(Debug, Deserialize)]
 struct TavilyFailedResult {
+    #[allow(dead_code)]
     url: String,
     error: String,
 }
@@ -101,7 +103,7 @@ impl WebSearchProvider for TavilyProvider {
     ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/search", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&url)
             .header("Authorization", self.auth_header())
@@ -113,9 +115,15 @@ impl WebSearchProvider for TavilyProvider {
                 "include_favicon": true,
             }))
             .send()
-            .await?
-            .json::<TavilySearchResponse>()
             .await?;
+
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+
+        let response = resp.json::<TavilySearchResponse>().await?;
 
         Ok(SearchResponse {
             organic: response
@@ -140,7 +148,7 @@ impl WebSearchProvider for TavilyProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let fetch_url = format!("{}/extract", self.base_url);
 
-        let response = self
+        let resp = self
             .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
@@ -150,26 +158,28 @@ impl WebSearchProvider for TavilyProvider {
                 "extract_depth": "basic"
             }))
             .send()
-            .await?
-            .json::<TavilyExtractResponse>()
             .await?;
 
-        // Find the result for the requested URL
-        for result in response.results {
-            if result.url == url {
-                return Ok(FetchResponse {
-                    content: result.raw_content,
-                    url: url.to_string(),
-                    title: None,
-                });
-            }
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16() as i32;
+            let body = resp.text().await.unwrap_or_default();
+            return Err(WebSearchError::ProviderError(status, body));
+        }
+
+        let response = resp.json::<TavilyExtractResponse>().await?;
+
+        // Take the first successful result (URL may be normalized by Tavily)
+        if let Some(result) = response.results.into_iter().next() {
+            return Ok(FetchResponse {
+                content: result.raw_content,
+                url: url.to_string(),
+                title: None,
+            });
         }
 
         // Check if there was a failure
-        for failed in response.failed_results {
-            if failed.url == url {
-                return Err(WebSearchError::ParseError(failed.error));
-            }
+        if let Some(failed) = response.failed_results.into_iter().next() {
+            return Err(WebSearchError::ParseError(failed.error));
         }
 
         Err(WebSearchError::ParseError(format!(
@@ -202,7 +212,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 TAVILY_API_KEYS 环境变量
     async fn test_search_integration() {
-        let api_key = std::env::var("TAVILY_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("TAVILY_API_KEYS");
         if api_key.is_empty() {
             eprintln!("跳过: TAVILY_API_KEYS 未设置");
             return;
@@ -227,7 +237,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 TAVILY_API_KEY 环境变量
     async fn test_fetch_integration() {
-        let api_key = std::env::var("TAVILY_API_KEYS").unwrap_or_default();
+        let api_key = crate::error::parse_api_key("TAVILY_API_KEYS");
         if api_key.is_empty() {
             eprintln!("跳过: TAVILY_API_KEYS 未设置");
             return;
