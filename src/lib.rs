@@ -26,12 +26,19 @@ pub fn build_router(
     server: WebSearchMcpServer,
     mcp_path: &str,
     api_key: Option<String>,
+    allowed_hosts: Vec<String>,
     ct: tokio_util::sync::CancellationToken,
 ) -> Router {
+    let mut config =
+        StreamableHttpServerConfig::default().with_cancellation_token(ct.child_token());
+    if !allowed_hosts.is_empty() {
+        config = config.with_allowed_hosts(allowed_hosts);
+    }
+
     let mcp_service = StreamableHttpService::new(
         move || Ok(server.clone()),
         LocalSessionManager::default().into(),
-        StreamableHttpServerConfig::default().with_cancellation_token(ct.child_token()),
+        config,
     );
 
     let cors = CorsLayer::new()

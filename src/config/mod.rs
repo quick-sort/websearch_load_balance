@@ -69,6 +69,10 @@ pub struct HttpConfig {
     /// Path for MCP endpoint
     #[serde(default)]
     pub mcp_path: Option<String>,
+    /// Allowed Host header values (for DNS rebinding protection).
+    /// Defaults to loopback hosts. Set to allow Docker service names, domains, etc.
+    #[serde(default)]
+    pub allowed_hosts: Vec<String>,
 }
 
 impl Default for HttpConfig {
@@ -79,6 +83,7 @@ impl Default for HttpConfig {
             port: default_port(),
             api_key: None,
             mcp_path: Some("/mcp".to_string()),
+            allowed_hosts: Vec::new(),
         }
     }
 }

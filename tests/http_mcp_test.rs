@@ -62,7 +62,7 @@ fn test_config() -> Config {
 async fn start_server(api_key: Option<String>) -> (String, CancellationToken) {
     let server = WebSearchMcpServer::new(&test_config()).expect("create server");
     let ct = CancellationToken::new();
-    let app = one_search::build_router(server, "/mcp", api_key, ct.clone());
+    let app = one_search::build_router(server, "/mcp", api_key, vec![], ct.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base_url = format!("http://{}", listener.local_addr().unwrap());

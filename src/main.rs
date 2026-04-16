@@ -112,7 +112,13 @@ async fn run_http_server(
     }
 
     let ct = tokio_util::sync::CancellationToken::new();
-    let app = one_search::build_router(server, &mcp_path, api_key, ct.clone());
+    let app = one_search::build_router(
+        server,
+        &mcp_path,
+        api_key,
+        http_config.allowed_hosts,
+        ct.clone(),
+    );
 
     let addr: std::net::SocketAddr = format!("{}:{}", host, port)
         .parse()
