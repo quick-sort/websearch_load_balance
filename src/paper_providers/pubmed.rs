@@ -252,12 +252,16 @@ fn parse_pubmed_xml(xml: &str) -> Vec<PaperResult> {
             .as_ref()
             .map(|pmc| format!("https://www.ncbi.nlm.nih.gov/pmc/articles/{}/pdf/", pmc));
 
+        // Extract PII
+        let pii = extract_article_id(article_block, "pii");
+
         papers.push(PaperResult {
             id: PaperId {
                 doi,
                 pmid: Some(pmid.clone()),
                 pmcid: pmcid.clone(),
                 url: Some(format!("https://pubmed.ncbi.nlm.nih.gov/{}/", pmid)),
+                pii,
                 ..Default::default()
             },
             title,
@@ -280,6 +284,21 @@ fn extract_tag(xml: &str, tag: &str) -> Option<String> {
     let after_open = xml[start..].find('>')? + start + 1;
     let end = xml[after_open..].find(&close)? + after_open;
     Some(xml[after_open..end].trim().to_string())
+}
+
+/// Extract ArticleId by IdType (e.g. "pii", "pmc", "doi") from ArticleIdList.
+fn extract_article_id(xml: &str, id_type: &str) -> Option<String> {
+    let marker = format!("IdType=\"{}\"", id_type);
+    let pos = xml.find(&marker)?;
+    let after = &xml[pos + marker.len()..];
+    let start = after.find('>')? + 1;
+    let end = after[start..].find('<')? + start;
+    let id = after[start..end].trim();
+    if id.is_empty() {
+        None
+    } else {
+        Some(id.to_string())
+    }
 }
 
 #[cfg(test)]

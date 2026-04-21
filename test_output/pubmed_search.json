@@ -1,0 +1,75 @@
+{
+  "papers": [
+    {
+      "paper_id": "42007392",
+      "title": "The bovine mammosphere-derived epithelial cell secretome inhibits bacterial growth in vitro and contains peptidoglycan recognition protein 1.",
+      "authors": [
+        "Harman RM",
+        "Danev N",
+        "Oxford KA",
+        "Oliveira L",
+        "Huntimer L",
+        "Van de Walle GR"
+      ],
+      "abstract": "Bovine mastitis, caused by bacterial infection of the mammary gland, leads to significant economic losses for the dairy industry because of decreased milk quality and yield. Mastitis is typically treated with conventional antibiotics (ABX) that clear bacteria, but do not address the milk loss associated with infection. Milk from cows being treated with ABX must be discarded leading to acute milk loss, and ABX do not heal milk-producing tissues that are damaged because of infection, leading to a permanent reduction in milk production when compared to pre-mastitis levels. The bovine mammosphere-derived epithelial cell (MDEC) secretome, consisting of all bioactive factors secreted by the cells, contains molecules that directly and indirectly promote tissue repair. This current study shows that the MDEC secretome also inhibits the growth of mastitis-causing bacteria <i>in vitro</i> in planktonic and biofilm assays. Secretome analysis by heat treatment, size fractionization, and extracellular vesicle isolation suggested that soluble proteins of different sizes, or in complexes, drive the anti-bacterial effects. We identified the antimicrobial protein peptidoglycan recognition protein 1 (PGLYRP1) in MDECs and detected it in the secretome. As knock down of PGLYRP1 expression in MDECs was unsuccessful using RNA interference and CRISPR-Cas9 gene editing, a direct link between the antimicrobial activity of the secretome and this protein could not be confirmed. The newly identified antimicrobial activity of the bovine MDEC secretome supplements its tissue reparative features, poising it as a potential adjunct or alternative therapy for bovine mastitis that may reduce acute milk loss and improve long term milk production.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42007392/",
+      "pdf_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC13084646/pdf/",
+      "published_date": "2026",
+      "source": "pubmed",
+      "categories": [],
+      "doi": "10.1016/j.vas.2026.100643",
+      "citations": null
+    },
+    {
+      "paper_id": "42003887",
+      "title": "CRISPR-Cas9-mediated homology-directed repair rescues the induced bone marrow failure in <i>Fancc</i> <sup>-/-</sup> mice.",
+      "authors": [
+        "Harikrishnan H",
+        "Lamsal M",
+        "Chan KK",
+        "Zhang J",
+        "Tian J",
+        "Fosu K",
+        "Nguyen HP",
+        "Clapp DW",
+        "Sierra Potchanant EA",
+        "Kapur R",
+        "Xiao W",
+        "Tran NT"
+      ],
+      "abstract": "Fanconi anemia (FA) is a rare recessive genetic disorder resulting from mutations in genes in the FA-DNA repair pathway. Among its subtypes, FA complementation group C (<i>FANCC</i>) is associated with particularly severe hematologic and developmental manifestations. Gene therapy targeting autologous hematopoietic stem/progenitor cells (HSPCs) from FA patients represents a promising curative strategy for FA-associated bone marrow failure (BMF), potentially circumventing the limitations of allogeneic transplantation. Despite substantial progress in developing gene therapy for FA group A (<i>FANCA</i> mutations), therapeutic strategies for FA group C have received comparatively little attention. Although FA-deficient cells are believed to exhibit compromised homologous recombination (HDR), our reporter assay demonstrated that <i>Fancc</i> <sup>-/-</sup> mouse HSPCs retain HDR activity, supporting the feasibility of precise gene editing. Building on this finding, we established a CRISPR-Cas9/AAV6-HDR platform to integrate Fancc cDNA into its endogenous locus while minimizing off-target effects and AAV integration. Correction of <i>Fancc</i> <sup>-/-</sup> HSPCs restored <i>Fancc</i> expression, rescued colony-forming capacity, and improved cellular viability. Importantly, transplantation of corrected HSPCs into <i>Fancc</i> <sup>-/-</sup> mice conferred resistance to mitomycin C-induced BMF, demonstrating durable <i>in vivo</i> functional correction. Collectively, these results establish CRISPR-Cas9-mediated HDR as a viable and potential therapeutic strategy for FA group C.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42003887/",
+      "pdf_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC13087461/pdf/",
+      "published_date": "2026",
+      "source": "pubmed",
+      "categories": [],
+      "doi": "10.1016/j.omtn.2026.102912",
+      "citations": null
+    },
+    {
+      "paper_id": "42003881",
+      "title": "sgRNA amount is a limiting factor in adenine base editing using RNA LNPs.",
+      "authors": [
+        "Birkenshaw A",
+        "Thomson T",
+        "Truong MP",
+        "Komaki Y",
+        "Ramsden N",
+        "Timpano A",
+        "Huang C",
+        "Blakney AK",
+        "Kurek DZ",
+        "Kulkarni J",
+        "Ross CJD"
+      ],
+      "abstract": "Base editors have emerged as powerful tools for precise genome editing, offering significant therapeutic potential. A critical challenge lies in optimizing the delivery and dosage of single-guide RNA to maximize on-target editing efficiency while minimizing off-target and bystander effects. This study investigates the impact of guide RNA dosage on <i>in vivo</i> editing efficiency and tissue specificity using a reporter mouse model with a luciferase transgene correctable by adenine base editing. Mice were treated with lipid nanoparticles co-encapsulating a fixed dose of ABE8e RNA and varying doses of guide RNA. Editing outcomes were assessed through whole-body imaging, <i>ex vivo</i> tissue analysis, and sequencing. Increasing the guide RNA dose to 4 mg/kg enhanced editing efficiency up to 3.3-fold in multiple tissues compared to the standard 1 mg/kg dose, with the liver exhibiting the highest on-target editing rates at 63%. Bystander editing increased significantly with higher guide RNA doses, particularly in highly edited tissues like the liver, where bystander edits showed a dose-dependent increase. These findings demonstrate the importance of careful guide RNA dose optimization to balance editing efficiency and tissue specificity with bystander effects in the therapeutic applications of ABE8e.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42003881/",
+      "pdf_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC13090319/pdf/",
+      "published_date": "2026",
+      "source": "pubmed",
+      "categories": [],
+      "doi": "10.1016/j.omtn.2026.102909",
+      "citations": null
+    }
+  ]
+}

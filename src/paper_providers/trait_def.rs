@@ -29,6 +29,9 @@ pub struct PaperId {
     /// URL to the paper
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    /// Publisher Item Identifier (e.g. "S2162-2531(26)00080-6")
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pii: Option<String>,
 }
 
 impl PaperId {
@@ -52,6 +55,7 @@ impl PaperId {
             && self.arxiv_id.is_none()
             && self.semantic_id.is_none()
             && self.url.is_none()
+            && self.pii.is_none()
     }
 }
 
@@ -75,6 +79,9 @@ impl fmt::Display for PaperId {
         }
         if let Some(v) = &self.url {
             parts.push(format!("url:{}", v));
+        }
+        if let Some(v) = &self.pii {
+            parts.push(format!("pii:{}", v));
         }
         write!(f, "PaperId({})", parts.join(", "))
     }
