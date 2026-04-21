@@ -56,6 +56,7 @@ fn test_config() -> Config {
             fallback: true,
         },
         providers,
+        paper_providers: vec![],
     }
 }
 
@@ -277,5 +278,117 @@ async fn test_mcp_no_auth_config_allows_access() {
         resp.status()
     );
 
+    ct.cancel();
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_mcp_paper_search() {
+    let (url, ct) = start_server(None).await;
+
+    let client = TestClient
+        .serve(StreamableHttpClientTransport::from_uri(format!(
+            "{}/mcp",
+            url
+        )))
+        .await
+        .unwrap();
+
+    let result = client
+        .call_tool(
+            CallToolRequestParams::new("paper_search").with_arguments(
+                serde_json::json!({
+                    "query": "machine learning",
+                    "n": 3,
+                    "sources": ["arxiv"]
+                })
+                .as_object()
+                .unwrap()
+                .clone(),
+            ),
+        )
+        .await
+        .unwrap();
+
+    assert!(!result.content.is_empty(), "empty result");
+    let raw = serde_json::to_string(&result.content[0]).unwrap();
+    assert!(
+        raw.contains("papers"),
+        "should contain papers field: {}",
+        raw
+    );
+
+    client.cancel().await.unwrap();
+    ct.cancel();
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_mcp_paper_fetch() {
+    let (url, ct) = start_server(None).await;
+
+    let client = TestClient
+        .serve(StreamableHttpClientTransport::from_uri(format!(
+            "{}/mcp",
+            url
+        )))
+        .await
+        .unwrap();
+
+    let result = client
+        .call_tool(
+            CallToolRequestParams::new("paper_fetch").with_arguments(
+                serde_json::json!({
+                    "arxiv_id": "2106.09685",
+                    "sources": ["arxiv"]
+                })
+                .as_object()
+                .unwrap()
+                .clone(),
+            ),
+        )
+        .await
+        .unwrap();
+
+    assert!(!result.content.is_empty(), "empty result");
+    let raw = serde_json::to_string(&result.content[0]).unwrap();
+    // Should contain paper content about LoRA
+    assert!(
+        raw.to_lowercase().contains("lora") || raw.to_lowercase().contains("low-rank"),
+        "should mention LoRA: {}",
+        raw
+    );
+
+    client.cancel().await.unwrap();
+    ct.cancel();
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_mcp_list_tools_includes_paper_tools() {
+    let (url, ct) = start_server(None).await;
+
+    let client = TestClient
+        .serve(StreamableHttpClientTransport::from_uri(format!(
+            "{}/mcp",
+            url
+        )))
+        .await
+        .unwrap();
+
+    let tools = client.list_all_tools().await.unwrap();
+    let names: Vec<String> = tools.iter().map(|t| t.name.to_string()).collect();
+    assert!(
+        names.iter().any(|n| n == "paper_search"),
+        "missing paper_search: {:?}",
+        names
+    );
+    assert!(
+        names.iter().any(|n| n == "paper_fetch"),
+        "missing paper_fetch: {:?}",
+        names
+    );
+
+    client.cancel().await.unwrap();
     ct.cancel();
 }

@@ -3,6 +3,8 @@
 pub mod config;
 pub mod error;
 pub mod load_balancer;
+pub mod paper_load_balancer;
+pub mod paper_providers;
 pub mod providers;
 pub mod tools;
 

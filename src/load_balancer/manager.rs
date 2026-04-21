@@ -389,6 +389,7 @@ mod tests {
                     settings: Default::default(),
                 },
             ],
+            paper_providers: vec![],
         }
     }
 
@@ -469,6 +470,7 @@ mod tests {
                 fallback: true,
             },
             providers,
+            paper_providers: vec![],
         })
     }
 

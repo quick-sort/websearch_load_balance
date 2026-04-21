@@ -123,3 +123,36 @@ providers:
   #     - "your-serper-api-key-here"
   #   settings:
   #     timeout_seconds: 30
+
+# Paper provider configurations (for paper_search / paper_fetch tools)
+# Most providers work without API keys. Keys improve rate limits.
+# Available sources: google_scholar, pubmed, arxiv, biorxiv, medrxiv, semantic, sci_hub
+paper_providers:
+  - name: "google_scholar"
+    enabled: true
+
+  - name: "pubmed"
+    enabled: true
+    # api_keys:  # optional NCBI API key for higher rate limits
+    #   - "your-ncbi-api-key"
+
+  - name: "arxiv"
+    enabled: true
+
+  - name: "biorxiv"
+    enabled: true
+
+  - name: "medrxiv"
+    enabled: true
+
+  - name: "semantic"
+    enabled: true
+    # api_keys:  # optional Semantic Scholar API key
+    #   - "your-semantic-scholar-api-key"
+
+  - name: "sci_hub"
+    enabled: true
+    # base_url: "https://sci-hub.se"  # default, can be changed to other mirrors
+
+  - name: "pmc"
+    enabled: true

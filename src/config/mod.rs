@@ -24,6 +24,8 @@ pub struct Config {
     #[serde(default)]
     pub provider_strategy: LoadBalanceStrategy,
     pub providers: Vec<ProviderConfig>,
+    #[serde(default)]
+    pub paper_providers: Vec<PaperProviderConfig>,
 }
 
 /// Server metadata configuration.
@@ -143,6 +145,18 @@ impl ProviderConfig {
         }
         Ok(())
     }
+}
+
+/// Paper provider configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaperProviderConfig {
+    pub name: String,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+    #[serde(default)]
+    pub base_url: String,
+    #[serde(default)]
+    pub api_keys: Vec<String>,
 }
 
 /// Provider-specific settings.
